@@ -1,3 +1,4 @@
+cd frontend
 # Coffee Shop Frontend
 
 ## Getting Setup

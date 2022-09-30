@@ -70,26 +70,33 @@ def get_drinks_details(payload):
 def create_new_drink(payload):
     
     form = request.get_json()
-    new_title = form.get('title')
-    new_recipe = json.dumps(form.get("recipe", None))
+    new_title = form.get('title',None)
+    new_recipe = json.dumps(form.get("recipe",None))
+    array_recipe = new_recipe
     
     
     
     
     try:
+        print("1")
         new_drink = Drink(
         title=new_title,
-        recipe = new_recipe
+        recipe = array_recipe
         )
+        print('2')
         new_drink.insert()
-        drink_long = [new_drink.long()]       
-        
-        if len(drink_long) == 0:
+       
+        print("3")      
+        all_drinks = Drink.query.all()
+        print("4")
+        formatted_drinks = [drink.long() for drink in all_drinks]
+        print("5")
+        if len(formatted_drinks) == 0:
             abort(404)
-            
+        print("6")    
         return {
             'success': True,
-            'drinks': drink_long,
+            'drinks': formatted_drinks,
         }, 200  
     except:
         abort(422)      
@@ -98,16 +105,17 @@ def create_new_drink(payload):
 
 @app.route('/drinks/<int:id>', methods=['PATCH'])
 @requires_auth('patch:drinks')
-def update_drink(id):
+def update_drink(payload,id):
+    
     form = request.get_json()
     updated_title = form.get('title')
-    updated_recipe = form.get('recipe')
+    
     try:
         drink_to_update = Drink.query.filter(Drink.id == id).one_or_none()
         if drink_to_update is None:
             abort(404)
         drink_to_update.title = updated_title
-        drink_to_update.recipe = json.dumps(updated_recipe)
+       
         
         drink_to_update.update()
         drink_long = [drink_to_update.long()]
@@ -127,7 +135,7 @@ def update_drink(id):
 
 @app.route('/drinks/<int:id>', methods = ['DELETE'])
 @requires_auth('delete:drinks')
-def delete_drink(id):
+def delete_drink(payload,id):
     try:
         drink_to_delete=Drink.query.get_or_404(id)
         drink_to_delete.delete()
@@ -187,7 +195,15 @@ def server_error(error):
       "message": "server error"   
     }, 500
 
-
+@app.errorhandler(403)
+def server_error(error):
+    return {
+      "success": False,
+      "error": 403,
+      "message": "You don't have the permission to access the requested resource."  
+    
+    }, 403
+    
 if __name__ == "__main__":
     app.debug = True
     app.run()
